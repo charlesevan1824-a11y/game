@@ -1,0 +1,1133 @@
+<!doctype html>
+<html lang="en" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Samurai Slayer</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Bebas+Neue&display=swap');
+
+    * { cursor: crosshair; user-select: none; box-sizing: border-box; }
+    html, body, #root { height: 100%; width: 100%; margin: 0; padding: 0; }
+    body { overflow: hidden; background: #000; }
+
+    .samurai-font { font-family: 'Orbitron', sans-serif; }
+    .title-font { font-family: 'Bebas Neue', cursive; letter-spacing: 3px; }
+    .neon-glow { text-shadow: 0 0 10px currentColor, 0 0 20px currentColor, 0 0 30px currentColor; }
+
+    /* Slash effect */
+    .slash-effect {
+      position: absolute;
+      font-size: 3.5rem;
+      pointer-events: none;
+      animation: slashAway 0.55s forwards;
+      z-index: 20;
+    }
+    @keyframes slashAway {
+      0%   { opacity: 1; transform: scale(1) rotate(0deg); }
+      100% { opacity: 0; transform: scale(0.2) rotate(45deg) translateY(-120px); }
+    }
+
+    /* Combo popup */
+    .combo-pop {
+      position: absolute;
+      font-family: 'Bebas Neue', cursive;
+      font-size: 2.2rem;
+      pointer-events: none;
+      animation: comboPop 0.8s forwards;
+      letter-spacing: 2px;
+      z-index: 20;
+    }
+    @keyframes comboPop {
+      0%   { opacity: 0; transform: scale(0.5) translateY(0); }
+      30%  { opacity: 1; transform: scale(1.3) translateY(-20px); }
+      100% { opacity: 0; transform: scale(0.8) translateY(-90px); }
+    }
+
+    /* Level up burst */
+    .levelup-burst {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+      z-index: 100;
+      animation: levelBurst 1.4s forwards;
+    }
+    .levelup-text {
+      font-family: 'Bebas Neue', cursive;
+      font-size: 5rem;
+      color: #fbbf24;
+      text-shadow: 0 0 30px #fbbf24, 0 0 60px #fbbf24, 0 0 90px #fbbf24;
+      letter-spacing: 4px;
+      animation: levelTextPop 1.4s forwards;
+    }
+    @keyframes levelBurst {
+      0%   { background: rgba(251,191,36,0.15); }
+      30%  { background: rgba(251,191,36,0.25); }
+      100% { background: rgba(0,0,0,0); }
+    }
+    @keyframes levelTextPop {
+      0%   { transform: scale(0.3); opacity: 0; }
+      20%  { transform: scale(1.2); opacity: 1; }
+      60%  { transform: scale(1); opacity: 1; }
+      100% { transform: scale(1.5); opacity: 0; }
+    }
+
+    /* YOU LOSE screen */
+    .you-lose-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(180,0,0,0.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 200;
+      animation: loseFlash 0.3s;
+    }
+    .you-lose-text {
+      font-family: 'Bebas Neue', cursive;
+      font-size: 7rem;
+      color: #fff;
+      letter-spacing: 6px;
+      text-shadow: 0 0 30px #ff0000, 0 0 60px #ff0000;
+      animation: loseBounce 0.6s cubic-bezier(0.68,-0.55,0.265,1.55);
+    }
+    @keyframes loseFlash {
+      0%   { opacity: 0; }
+      50%  { opacity: 1; }
+      100% { opacity: 1; }
+    }
+    @keyframes loseBounce {
+      0%   { transform: scale(0.5) translateY(-60px); }
+      60%  { transform: scale(1.1) translateY(10px); }
+      100% { transform: scale(1) translateY(0); }
+    }
+
+    /* Countdown overlay */
+    .countdown-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.85);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 150;
+    }
+    .countdown-number {
+      font-family: 'Bebas Neue', cursive;
+      font-size: 10rem;
+      letter-spacing: 4px;
+      animation: countPop 0.5s cubic-bezier(0.68,-0.55,0.265,1.55);
+    }
+    @keyframes countPop {
+      0%   { transform: scale(0.3); opacity: 0; }
+      60%  { transform: scale(1.2); opacity: 1; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    /* Instructions modal */
+    .instructions-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.9);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 140;
+      animation: fadeIn 0.3s;
+    }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+    /* Damage flash */
+    .damage-flash {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 90;
+      animation: damageFlashAnim 0.5s forwards;
+      background: radial-gradient(ellipse at center, transparent 30%, rgba(200,0,0,0.6) 100%);
+    }
+    @keyframes damageFlashAnim {
+      0%   { opacity: 1; }
+      100% { opacity: 0; }
+    }
+
+    /* Screen shake */
+    @keyframes screenShake {
+      0%,100% { transform: translate(0,0); }
+      20% { transform: translate(-8px,4px); }
+      40% { transform: translate(8px,-4px); }
+      60% { transform: translate(-6px,6px); }
+      80% { transform: translate(6px,-2px); }
+    }
+    .shaking { animation: screenShake 0.4s; }
+
+    /* Backgrounds per level */
+    .bg-level-1 { background: linear-gradient(to bottom, #0d2b45, #071520); }
+    .bg-level-2 { background: linear-gradient(to bottom, #450d0d, #200707); }
+    .bg-level-3 { background: linear-gradient(to bottom, #2d0d45, #120720); }
+    .bg-level-4 { background: linear-gradient(to bottom, #450d1e, #200710); }
+    .bg-level-5 { background: linear-gradient(to bottom, #45200d, #200d07); }
+
+    /* Rank badges */
+    .rank-badge { display: inline-block; padding: 5px 14px; border-radius: 20px; font-weight: bold; font-size: 0.85rem; }
+    .rank-novice    { background: #64748b; color: #fff; }
+    .rank-warrior   { background: #ea580c; color: #fff; }
+    .rank-master    { background: #fbbf24; color: #000; }
+    .rank-legendary { background: #ff006e; color: #fff; }
+
+    .persona-card { transition: all 0.3s; border: 2px solid transparent; }
+    .persona-card:hover { transform: scale(1.05); border-color: #fbbf24; }
+    .persona-card.selected { border-color: #ff006e; box-shadow: 0 0 20px #ff006e; }
+
+    .shop-item { transition: all 0.3s; }
+    .shop-item:hover { transform: translateY(-5px); }
+    .shop-item.equipped { box-shadow: inset 0 0 15px rgba(251,191,36,0.5); }
+
+    /* Power-up indicators */
+    .powerup-indicator {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.85rem;
+      padding: 4px 10px;
+      border-radius: 8px;
+      font-weight: bold;
+      animation: powerupPulse 0.5s infinite alternate;
+    }
+    @keyframes powerupPulse {
+      0%   { filter: brightness(1); }
+      100% { filter: brightness(1.4); }
+    }
+
+    /* Pause button */
+    #pause-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      z-index: 50;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.8rem;
+      padding: 6px 14px;
+      background: rgba(255,255,255,0.1);
+      color: #fff;
+      border: 1px solid rgba(255,255,255,0.3);
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    #pause-btn:hover { background: rgba(255,255,255,0.2); }
+
+    /* Pause menu */
+    .pause-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.85);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 120;
+    }
+  </style>
+</head>
+<body>
+<div id="root" class="w-full h-full flex flex-col">
+
+  <!-- ===== MAIN MENU ===== -->
+  <div id="main-menu" class="w-full h-full flex flex-col items-center justify-center bg-gradient-to-b from-gray-900 via-black to-gray-900 relative overflow-hidden">
+    <div class="absolute inset-0 opacity-10 pointer-events-none">
+      <div class="absolute top-16 left-10 text-6xl animate-pulse">🗾</div>
+      <div class="absolute bottom-28 right-16 text-5xl animate-pulse">⚔️</div>
+      <div class="absolute top-1/3 right-8 text-4xl animate-ping" style="animation-duration:3s">🌸</div>
+      <div class="absolute bottom-1/3 left-8 text-4xl animate-ping" style="animation-duration:4s">🌙</div>
+    </div>
+    <div class="relative z-10 text-center">
+      <h1 class="title-font text-8xl text-red-600 neon-glow mb-1">SAMURAI</h1>
+      <h2 class="title-font text-7xl text-yellow-500 neon-glow mb-10">SLAYER</h2>
+      <div class="mb-10 flex flex-col items-center gap-3">
+        <button id="btn-play"        class="samurai-font text-lg w-64 py-4 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white rounded-lg transform hover:scale-105 transition font-bold">▶ START BATTLE</button>
+        <button id="btn-shop"        class="samurai-font text-lg w-64 py-4 bg-gradient-to-r from-yellow-600 to-yellow-700 hover:from-yellow-500 hover:to-yellow-600 text-black rounded-lg transform hover:scale-105 transition font-bold">🛍 SHOP</button>
+        <button id="btn-leaderboard" class="samurai-font text-lg w-64 py-4 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-500 hover:to-purple-600 text-white rounded-lg transform hover:scale-105 transition font-bold">📊 LEADERBOARD</button>
+        <button id="btn-settings"    class="samurai-font text-lg w-64 py-4 bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-500 hover:to-gray-600 text-white rounded-lg transform hover:scale-105 transition font-bold">⚙ SETTINGS</button>
+      </div>
+      <div id="player-preview" class="text-gray-400 text-sm">
+        <p class="text-yellow-400 font-bold samurai-font">Ready to become a legend?</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== CHARACTER SELECT ===== -->
+  <div id="character-select" class="w-full h-full hidden flex-col items-center justify-center bg-gradient-to-b from-gray-900 via-black to-gray-900 p-6 overflow-y-auto">
+    <h2 class="title-font text-5xl text-yellow-500 neon-glow mb-10">CHOOSE YOUR PERSONA</h2>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-10">
+      <div class="persona-card bg-gray-800 p-6 rounded-xl text-center" data-persona="ninja">
+        <div class="text-6xl mb-4">🥷</div>
+        <h3 class="samurai-font text-xl text-cyan-400 mb-3">NINJA</h3>
+        <div class="text-gray-300 text-sm space-y-1 mb-4">
+          <p><span class="text-red-400">⚔️ Power:</span> 7/10</p>
+          <p><span class="text-blue-400">🛡️ Defense:</span> 6/10</p>
+          <p><span class="text-green-400">⚡ Speed:</span> 9/10</p>
+          <p class="mt-3 text-gray-400 italic">"Swift and deadly"</p>
+        </div>
+        <button class="samurai-font w-full py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded font-bold text-sm">SELECT</button>
+      </div>
+      <div class="persona-card bg-gray-800 p-6 rounded-xl text-center" data-persona="berserker">
+        <div class="text-6xl mb-4">💪</div>
+        <h3 class="samurai-font text-xl text-red-400 mb-3">BERSERKER</h3>
+        <div class="text-gray-300 text-sm space-y-1 mb-4">
+          <p><span class="text-red-400">⚔️ Power:</span> 10/10</p>
+          <p><span class="text-blue-400">🛡️ Defense:</span> 5/10</p>
+          <p><span class="text-green-400">⚡ Speed:</span> 6/10</p>
+          <p class="mt-3 text-gray-400 italic">"Raw overwhelming force"</p>
+        </div>
+        <button class="samurai-font w-full py-2 bg-red-600 hover:bg-red-500 text-white rounded font-bold text-sm">SELECT</button>
+      </div>
+      <div class="persona-card bg-gray-800 p-6 rounded-xl text-center" data-persona="guardian">
+        <div class="text-6xl mb-4">🛡️</div>
+        <h3 class="samurai-font text-xl text-yellow-400 mb-3">GUARDIAN</h3>
+        <div class="text-gray-300 text-sm space-y-1 mb-4">
+          <p><span class="text-red-400">⚔️ Power:</span> 6/10</p>
+          <p><span class="text-blue-400">🛡️ Defense:</span> 10/10</p>
+          <p><span class="text-green-400">⚡ Speed:</span> 5/10</p>
+          <p class="mt-3 text-gray-400 italic">"Unbreakable protector"</p>
+        </div>
+        <button class="samurai-font w-full py-2 bg-yellow-600 hover:bg-yellow-500 text-black rounded font-bold text-sm">SELECT</button>
+      </div>
+    </div>
+    <button id="back-from-character" class="samurai-font px-8 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded">← BACK</button>
+  </div>
+
+  <!-- ===== DIFFICULTY SELECT ===== -->
+  <div id="difficulty-select" class="w-full h-full hidden flex-col items-center justify-center bg-gradient-to-b from-gray-900 via-black to-gray-900 p-6">
+    <h2 class="title-font text-5xl text-yellow-500 neon-glow mb-12">SELECT DIFFICULTY</h2>
+    <div class="space-y-5 mb-12">
+      <button class="difficulty-btn samurai-font text-lg w-80 py-4 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-500 hover:to-green-600 text-white rounded-lg font-bold" data-difficulty="normal">🌙 NORMAL – Beginner's Path</button>
+      <button class="difficulty-btn samurai-font text-lg w-80 py-4 bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-500 hover:to-orange-600 text-white rounded-lg font-bold" data-difficulty="hard">🌅 HARD – Warrior's Challenge</button>
+      <button class="difficulty-btn samurai-font text-lg w-80 py-4 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white rounded-lg font-bold" data-difficulty="insane">☀️ INSANE – Master's Test</button>
+    </div>
+    <button id="back-from-difficulty" class="samurai-font px-8 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded">← BACK</button>
+  </div>
+
+  <!-- ===== GAMEPLAY ===== -->
+  <div id="gameplay" class="w-full h-full hidden flex-col bg-black relative overflow-hidden">
+    <div id="game-bg" class="absolute inset-0 bg-level-1 transition-all duration-1000"></div>
+
+    <!-- HUD -->
+    <div class="relative z-10 p-3 flex justify-between items-start pointer-events-none">
+      <div class="text-white">
+        <p class="samurai-font text-xs text-gray-400">PERSONA: <span id="hud-persona" class="text-yellow-400 font-bold">NINJA</span></p>
+        <p class="samurai-font text-xs text-gray-400">DIFFICULTY: <span id="hud-difficulty" class="text-red-400 font-bold">NORMAL</span></p>
+        <p class="samurai-font text-xs text-gray-400">LEVEL: <span id="hud-level" class="text-pink-400 font-bold">1</span></p>
+      </div>
+      <div class="text-center">
+        <p class="samurai-font text-4xl font-bold text-yellow-400 neon-glow" id="score-display">0</p>
+        <p class="samurai-font text-xs text-gray-400">SCORE</p>
+        <p class="samurai-font text-sm text-cyan-400 font-bold mt-1">COMBO: <span id="combo-display">0x</span></p>
+      </div>
+      <div class="text-right">
+        <p id="lives-display" class="text-2xl mb-1">❤️❤️❤️</p>
+        <p class="samurai-font text-xs text-gray-400">LIVES</p>
+      </div>
+    </div>
+
+    <!-- Power-up indicators -->
+    <div class="absolute top-20 left-3 z-10 flex flex-col gap-2 pointer-events-none">
+      <div id="shield-indicator" class="powerup-indicator bg-yellow-800 text-yellow-300 hidden">🛡️ SHIELD</div>
+      <div id="double-indicator" class="powerup-indicator bg-pink-900 text-pink-300 hidden">2️⃣ 2× POINTS</div>
+      <div id="slow-indicator"  class="powerup-indicator bg-blue-900 text-blue-300 hidden">🐢 SLOW TIME</div>
+    </div>
+
+    <!-- Pause button -->
+    <button id="pause-btn" class="pointer-events-auto">⏸ PAUSE</button>
+
+    <!-- Game Area -->
+    <div id="game-area" class="relative flex-1 w-full"></div>
+
+    <!-- Game Over Modal -->
+    <div id="game-over-modal" class="absolute inset-0 hidden flex items-center justify-center z-50 bg-black/85">
+      <div class="bg-gray-900 border-4 border-red-600 p-8 rounded-xl text-center max-w-sm w-full mx-4">
+        <h2 class="title-font text-5xl text-red-500 mb-4 neon-glow">GAME OVER</h2>
+        <div class="bg-gray-800 p-4 rounded-lg mb-5">
+          <p class="text-gray-400 text-xs samurai-font">FINAL SCORE</p>
+          <p id="game-over-score" class="samurai-font text-4xl text-yellow-400 font-bold">0</p>
+        </div>
+        <div class="grid grid-cols-3 gap-3 mb-5 text-xs">
+          <div class="bg-gray-800 p-2 rounded-lg">
+            <p class="text-gray-400">Enemies</p>
+            <p id="game-over-kills" class="text-cyan-400 font-bold text-base">0</p>
+          </div>
+          <div class="bg-gray-800 p-2 rounded-lg">
+            <p class="text-gray-400">Best Combo</p>
+            <p id="game-over-combo" class="text-pink-400 font-bold text-base">0x</p>
+          </div>
+          <div class="bg-gray-800 p-2 rounded-lg">
+            <p class="text-gray-400">Coins</p>
+            <p id="game-over-coins" class="text-yellow-500 font-bold text-base">0</p>
+          </div>
+        </div>
+        <div class="space-y-2">
+          <button id="restart-game" class="samurai-font w-full py-3 bg-green-600 hover:bg-green-500 text-white rounded-lg font-bold">🔄 PLAY AGAIN</button>
+          <button id="menu-from-game" class="samurai-font w-full py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-bold">← MAIN MENU</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== SHOP ===== -->
+  <div id="shop" class="w-full h-full hidden flex-col bg-gradient-to-b from-gray-900 via-black to-gray-900 p-6 overflow-y-auto">
+    <div class="flex justify-between items-center mb-8">
+      <h2 class="title-font text-4xl text-yellow-500 neon-glow">SHOP</h2>
+      <button id="back-from-shop" class="samurai-font px-6 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded font-bold">← BACK</button>
+    </div>
+    <div class="flex justify-between mb-8 bg-gray-800 p-4 rounded-lg">
+      <div><p class="text-gray-400 text-xs samurai-font">TOTAL COINS</p><p class="samurai-font text-3xl text-yellow-400 font-bold" id="shop-coins">0</p></div>
+      <div><p class="text-gray-400 text-xs samurai-font mb-1">RANK</p><p id="shop-rank" class="rank-badge rank-novice">NOVICE</p></div>
+    </div>
+    <div class="mb-8">
+      <h3 class="samurai-font text-xl text-cyan-400 mb-4">🎨 SKINS</h3>
+      <div id="skins-container" class="grid grid-cols-2 md:grid-cols-4 gap-4"></div>
+    </div>
+    <div class="mb-8">
+      <h3 class="samurai-font text-xl text-red-400 mb-4">⚔️ WEAPONS</h3>
+      <div id="weapons-container" class="grid grid-cols-2 md:grid-cols-4 gap-4"></div>
+    </div>
+    <div>
+      <h3 class="samurai-font text-xl text-purple-400 mb-4">👕 CLOTHES</h3>
+      <div id="clothes-container" class="grid grid-cols-2 md:grid-cols-4 gap-4"></div>
+    </div>
+  </div>
+
+  <!-- ===== LEADERBOARD ===== -->
+  <div id="leaderboard" class="w-full h-full hidden flex-col bg-gradient-to-b from-gray-900 via-black to-gray-900 p-6 overflow-y-auto">
+    <div class="flex justify-between items-center mb-8">
+      <h2 class="title-font text-4xl text-yellow-500 neon-glow">LEADERBOARD</h2>
+      <button id="back-from-leaderboard" class="samurai-font px-6 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded font-bold">← BACK</button>
+    </div>
+    <div id="leaderboard-list" class="space-y-3"></div>
+  </div>
+
+  <!-- ===== SETTINGS ===== -->
+  <div id="settings" class="w-full h-full hidden flex-col items-center justify-center bg-gradient-to-b from-gray-900 via-black to-gray-900 p-6">
+    <h2 class="title-font text-4xl text-yellow-500 neon-glow mb-12">SETTINGS</h2>
+    <div class="bg-gray-800 p-8 rounded-xl max-w-md w-full space-y-6">
+      <div class="flex items-center justify-between">
+        <label class="text-white font-bold samurai-font text-sm">🔊 SOUND EFFECTS</label>
+        <input type="checkbox" id="sound-toggle" class="w-6 h-6" checked>
+      </div>
+      <div class="flex items-center justify-between">
+        <label class="text-white font-bold samurai-font text-sm">🎵 MUSIC</label>
+        <input type="checkbox" id="music-toggle" class="w-6 h-6" checked>
+      </div>
+      <hr class="border-gray-700">
+      <div class="text-gray-400 text-sm space-y-2">
+        <p class="font-bold text-white samurai-font text-xs">HOW TO PLAY:</p>
+        <p>• Slice enemies (👹) as they fly up</p>
+        <p>• AVOID bombs (💣) — they end the game!</p>
+        <p>• Build combos for bonus points</p>
+        <p>• Every 15 kills = Level Up! 🎉</p>
+        <p>• Collect power-ups: Shield, 2× Points, Slow Time</p>
+        <p>• Earn coins to unlock items in the Shop</p>
+        <p>• Reach higher ranks for prestige</p>
+      </div>
+    </div>
+    <button id="back-from-settings" class="samurai-font mt-8 px-8 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded font-bold">← BACK</button>
+  </div>
+
+</div>
+
+<!-- ===== INSTRUCTIONS MODAL (injected dynamically) ===== -->
+<!-- ===== COUNTDOWN, PAUSE, YOU LOSE overlays also injected dynamically ===== -->
+
+<script>
+// ============================
+// CONFIG & CONSTANTS
+// ============================
+const PERSONAS = {
+  ninja:     { name:'Ninja',     icon:'🥷', power:7,  defense:6,  speed:9,  color:'cyan'   },
+  berserker: { name:'Berserker', icon:'💪', power:10, defense:5,  speed:6,  color:'red'    },
+  guardian:  { name:'Guardian',  icon:'🛡️', power:6,  defense:10, speed:5,  color:'yellow' }
+};
+const DIFFICULTIES = {
+  normal: { name:'Normal', baseSpawnRate:1200, multiplier:1   },
+  hard:   { name:'Hard',   baseSpawnRate:800,  multiplier:1.5 },
+  insane: { name:'Insane', baseSpawnRate:400,  multiplier:2   }
+};
+const LEVEL_BACKGROUNDS = ['bg-level-1','bg-level-2','bg-level-3','bg-level-4','bg-level-5'];
+const KILLS_PER_LEVEL = 15;
+
+const SHOP_ITEMS = {
+  skins:   [
+    {id:'default', name:'Default',  emoji:'🥷', cost:0},
+    {id:'gold',    name:'Gold',     emoji:'✨', cost:500},
+    {id:'shadow',  name:'Shadow',   emoji:'🌑', cost:800},
+    {id:'cyber',   name:'Cyber',    emoji:'🤖', cost:1000}
+  ],
+  weapons: [
+    {id:'katana',  name:'Katana',      emoji:'⚔️', cost:0},
+    {id:'flame',   name:'Flame Blade', emoji:'🔥', cost:600},
+    {id:'frost',   name:'Frost Blade', emoji:'❄️', cost:600},
+    {id:'dark',    name:'Dark Blade',  emoji:'⚫', cost:1200}
+  ],
+  clothes: [
+    {id:'default', name:'Default', emoji:'👕', cost:0},
+    {id:'armor',   name:'Armor',   emoji:'🛡️', cost:700},
+    {id:'robe',    name:'Robe',    emoji:'👔', cost:500},
+    {id:'legend',  name:'Legend',  emoji:'👑', cost:2000}
+  ]
+};
+
+// ============================
+// STATE
+// ============================
+let gameState = {
+  currentScreen: 'main-menu',
+  selectedPersona: 'ninja',
+  selectedDifficulty: 'normal',
+  score: 0, coins: 0, lives: 3,
+  combo: 0, maxCombo: 0, kills: 0,
+  level: 1,
+  hasShield: false, hasDoublePoints: false, hasSlowTime: false,
+  soundEnabled: true, musicEnabled: true
+};
+
+let playerData = {
+  player_name: 'Samurai',
+  rank: 'Novice',
+  total_coins: 0,
+  high_score: 0,
+  current_skin: 'default',
+  games_played: 0,
+  total_kills: 0
+};
+
+let allPlayers = [];
+let gameActive = false;
+let gamePaused = false;
+let spawnInterval = null;
+let enemies = [];
+let animationFrames = [];
+
+// ============================
+// SCREEN NAVIGATION
+// ============================
+const SCREENS = ['main-menu','character-select','difficulty-select','gameplay','shop','leaderboard','settings'];
+function showScreen(id) {
+  SCREENS.forEach(s => {
+    const el = document.getElementById(s);
+    if(el) {
+      el.classList.add('hidden');
+      el.classList.remove('flex');
+    }
+  });
+  const target = document.getElementById(id);
+  if(target) {
+    target.classList.remove('hidden');
+    target.classList.add('flex');
+  }
+  gameState.currentScreen = id;
+}
+
+// ============================
+// MAIN MENU BUTTONS
+// ============================
+document.getElementById('btn-play').addEventListener('click', () => showScreen('character-select'));
+document.getElementById('btn-shop').addEventListener('click', () => {
+  updateShopUI(); renderShop(); showScreen('shop');
+});
+document.getElementById('btn-leaderboard').addEventListener('click', () => {
+  renderLeaderboard(); showScreen('leaderboard');
+});
+document.getElementById('btn-settings').addEventListener('click', () => showScreen('settings'));
+
+// ============================
+// CHARACTER SELECT
+// ============================
+document.querySelectorAll('.persona-card').forEach(card => {
+  const selectPersona = () => {
+    document.querySelectorAll('.persona-card').forEach(c => c.classList.remove('selected'));
+    card.classList.add('selected');
+    gameState.selectedPersona = card.dataset.persona;
+  };
+  card.addEventListener('click', selectPersona);
+  card.querySelector('button').addEventListener('click', e => {
+    e.stopPropagation();
+    selectPersona();
+    showScreen('difficulty-select');
+  });
+});
+document.getElementById('back-from-character').addEventListener('click', () => showScreen('main-menu'));
+
+// ============================
+// DIFFICULTY SELECT
+// ============================
+document.querySelectorAll('.difficulty-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    gameState.selectedDifficulty = btn.dataset.difficulty;
+    showInstructions();
+  });
+});
+document.getElementById('back-from-difficulty').addEventListener('click', () => showScreen('character-select'));
+
+// ============================
+// INSTRUCTIONS MODAL
+// ============================
+function showInstructions() {
+  const overlay = document.createElement('div');
+  overlay.className = 'instructions-overlay';
+  overlay.id = 'instructions-overlay';
+  overlay.innerHTML = `
+    <div class="bg-gray-900 border-4 border-yellow-500 p-8 rounded-xl max-w-md w-full mx-4 text-center">
+      <h2 class="title-font text-4xl text-yellow-400 mb-2 neon-glow">HOW TO PLAY</h2>
+      <p class="text-gray-400 text-xs samurai-font mb-6">READ CAREFULLY, WARRIOR</p>
+      <div class="text-left space-y-3 mb-6 text-sm text-gray-300 bg-gray-800 p-4 rounded-lg">
+        <p class="flex gap-2"><span class="text-2xl">👹</span><span><strong class="text-yellow-300">Click enemies</strong> as they fly up to slice them and earn points.</span></p>
+        <p class="flex gap-2"><span class="text-2xl">💣</span><span><strong class="text-red-400">AVOID bombs!</strong> Clicking one ends the game instantly.</span></p>
+        <p class="flex gap-2"><span class="text-2xl">❤️</span><span>You have <strong class="text-red-400">3 lives</strong>. Enemies that escape steal a life.</span></p>
+        <p class="flex gap-2"><span class="text-2xl">🔥</span><span>Chain kills to build a <strong class="text-pink-400">COMBO MULTIPLIER</strong> for massive points!</span></p>
+        <p class="flex gap-2"><span class="text-2xl">⭐</span><span>Every <strong class="text-cyan-400">15 kills</strong> you Level Up — enemies get faster!</span></p>
+        <p class="flex gap-2"><span class="text-2xl">💫</span><span>Random <strong class="text-green-400">power-ups</strong> appear: Shield, 2× Points, Slow Time.</span></p>
+        <p class="flex gap-2"><span class="text-2xl">💰</span><span>Earn <strong class="text-yellow-400">coins</strong> from kills to unlock Shop items.</span></p>
+        <p class="flex gap-2"><span class="text-2xl">⏸</span><span>Use the <strong class="text-white">PAUSE</strong> button to take a break mid-game.</span></p>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <button id="skip-instructions" class="samurai-font py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-bold text-sm">SKIP</button>
+        <button id="ready-btn" class="samurai-font py-3 bg-gradient-to-r from-red-600 to-yellow-600 hover:from-red-500 hover:to-yellow-500 text-white rounded-lg font-bold text-sm">READY → START!</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+
+  const launch = () => {
+    overlay.remove();
+    showCountdown();
+  };
+  document.getElementById('skip-instructions').addEventListener('click', launch);
+  document.getElementById('ready-btn').addEventListener('click', launch);
+}
+
+// ============================
+// COUNTDOWN
+// ============================
+function showCountdown() {
+  const overlay = document.createElement('div');
+  overlay.className = 'countdown-overlay';
+  overlay.id = 'countdown-overlay';
+  document.body.appendChild(overlay);
+
+  // Make sure gameplay screen is visible but overlay is on top
+  showScreen('gameplay');
+  setupGameplayHUD();
+
+  const steps = [
+    { text: '3', color: '#ef4444' },
+    { text: '2', color: '#f97316' },
+    { text: '1', color: '#22c55e' },
+    { text: 'START!', color: '#fbbf24' }
+  ];
+  let i = 0;
+
+  function nextStep() {
+    if (i >= steps.length) {
+      overlay.remove();
+      startGameLoop();
+      return;
+    }
+    const s = steps[i++];
+    overlay.innerHTML = `<div class="countdown-number neon-glow" style="color:${s.color}">${s.text}</div>`;
+    setTimeout(nextStep, i === steps.length ? 700 : 900);
+  }
+  nextStep();
+}
+
+// ============================
+// GAME SETUP
+// ============================
+function setupGameplayHUD() {
+  gameState.score = 0; gameState.lives = 3;
+  gameState.combo = 0; gameState.maxCombo = 0;
+  gameState.kills = 0; gameState.level = 1;
+  gameState.coins = 0;
+  gameState.hasShield = false;
+  gameState.hasDoublePoints = false;
+  gameState.hasSlowTime = false;
+  enemies = [];
+
+  document.getElementById('hud-persona').textContent    = PERSONAS[gameState.selectedPersona].name.toUpperCase();
+  document.getElementById('hud-difficulty').textContent = DIFFICULTIES[gameState.selectedDifficulty].name.toUpperCase();
+  document.getElementById('hud-level').textContent      = '1';
+  document.getElementById('game-area').innerHTML        = '';
+  document.getElementById('game-over-modal').classList.add('hidden');
+  document.getElementById('game-over-modal').classList.remove('flex');
+
+  setLevelBackground(1);
+  updateGameUI();
+}
+
+function startGameLoop() {
+  gameActive = true;
+  gamePaused = false;
+
+  if (spawnInterval) clearInterval(spawnInterval);
+  const rate = getCurrentSpawnRate();
+  spawnInterval = setInterval(() => { if (gameActive && !gamePaused) spawnEnemy(); }, rate);
+  spawnEnemy();
+}
+
+function getCurrentSpawnRate() {
+  const base = DIFFICULTIES[gameState.selectedDifficulty].baseSpawnRate;
+  // Each level reduces spawn rate by 80ms (faster enemies)
+  return Math.max(250, base - (gameState.level - 1) * 80);
+}
+
+function setLevelBackground(lvl) {
+  const bg = document.getElementById('game-bg');
+  LEVEL_BACKGROUNDS.forEach(c => bg.classList.remove(c));
+  const idx = Math.min(lvl - 1, LEVEL_BACKGROUNDS.length - 1);
+  bg.classList.add(LEVEL_BACKGROUNDS[idx]);
+}
+
+// ============================
+// SPAWN & ANIMATE ENEMIES
+// ============================
+function spawnEnemy() {
+  if (!gameActive || gamePaused) return;
+  const gameArea = document.getElementById('game-area');
+  if (!gameArea) return;
+
+  const isBomb = Math.random() < 0.15;
+  const enemy  = document.createElement('div');
+  enemy.className = 'absolute text-5xl pointer-events-auto select-none';
+  enemy.textContent = isBomb ? '💣' : '👹';
+  enemy.dataset.bomb = isBomb ? 'true' : 'false';
+  enemy.dataset.eid  = Date.now() + Math.random();
+
+  const areaW = gameArea.offsetWidth || 300;
+  const startX = Math.random() * Math.max(areaW - 80, 100);
+  enemy.style.left   = startX + 'px';
+  enemy.style.bottom = '-60px';
+  enemy.style.zIndex = '10';
+
+  gameArea.appendChild(enemy);
+  enemies.push({ element: enemy, eid: enemy.dataset.eid, sliced: false });
+
+  enemy.addEventListener('click', e => { e.stopPropagation(); sliceEnemy(enemy); });
+  animateEnemyArc(enemy);
+}
+
+function animateEnemyArc(enemy) {
+  const gameArea = document.getElementById('game-area');
+  if (!gameArea) return;
+
+  const startTime  = performance.now();
+  const duration   = Math.max(1800, 2800 - (gameState.level - 1) * 120); // faster per level
+  const startX     = parseFloat(enemy.style.left);
+  const drift      = (Math.random() - 0.5) * 160;
+  const areaH      = gameArea.offsetHeight || 500;
+  const peakH      = areaH * (0.45 + Math.random() * 0.35);
+
+  function frame(now) {
+    if (!enemy.parentElement) return;
+    if (gamePaused) { requestAnimationFrame(frame); return; }
+
+    const elapsed  = now - startTime;
+    const progress = Math.min(elapsed / duration, 1);
+
+    if (progress >= 1) {
+      if (enemy.dataset.bomb === 'false' && !enemy.dataset.sliced) {
+        takeDamage();
+      }
+      enemy.remove();
+      return;
+    }
+
+    const arcY = Math.sin(progress * Math.PI) * peakH;
+    const x    = startX + drift * progress;
+
+    enemy.style.bottom    = arcY + 'px';
+    enemy.style.left      = x + 'px';
+    enemy.style.transform = ''; // no spin — smooth arc only
+
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+}
+
+function takeDamage() {
+  if (gameState.hasShield) return;
+  gameState.lives--;
+  gameState.combo = 0; // reset combo on miss
+  showDamageFlash();
+  checkGameOver();
+  updateGameUI();
+}
+
+function showDamageFlash() {
+  const flash = document.createElement('div');
+  flash.className = 'damage-flash';
+  document.body.appendChild(flash);
+  setTimeout(() => flash.remove(), 500);
+
+  // Screen shake on gameplay
+  const gp = document.getElementById('gameplay');
+  gp.classList.remove('shaking');
+  void gp.offsetWidth; // reflow
+  gp.classList.add('shaking');
+  setTimeout(() => gp.classList.remove('shaking'), 400);
+}
+
+// ============================
+// SLICE ENEMY
+// ============================
+function sliceEnemy(enemy) {
+  const data = enemies.find(e => e.element === enemy);
+  if (!data || data.sliced) return;
+  data.sliced = true;
+  enemy.dataset.sliced = 'true';
+
+  if (enemy.dataset.bomb === 'true') {
+    gameActive = false;
+    showYouLose(() => endGame());
+    return;
+  }
+
+  // Hit!
+  gameState.combo++;
+  gameState.maxCombo = Math.max(gameState.maxCombo, gameState.combo);
+  gameState.kills++;
+
+  let points = 10 * DIFFICULTIES[gameState.selectedDifficulty].multiplier;
+  if (gameState.combo > 2) points *= gameState.combo;
+  if (gameState.hasDoublePoints) points *= 2;
+
+  const coinsEarned = Math.floor(points / 20);
+  gameState.score += Math.round(points);
+  gameState.coins += coinsEarned;
+
+  if (gameState.combo >= 3) showComboPopup(enemy, gameState.combo);
+  if (Math.random() < 0.1) activatePowerup();
+
+  // Level up check
+  const newLevel = Math.floor(gameState.kills / KILLS_PER_LEVEL) + 1;
+  if (newLevel > gameState.level) {
+    gameState.level = newLevel;
+    triggerLevelUp();
+  }
+
+  createSlashEffect(enemy.style.left, enemy.style.bottom);
+  enemy.style.opacity = '0';
+  setTimeout(() => enemy.remove(), 150);
+
+  updateGameUI();
+}
+
+function createSlashEffect(x, y) {
+  const gameArea = document.getElementById('game-area');
+  const slash = document.createElement('div');
+  slash.className = 'slash-effect text-yellow-400';
+  slash.textContent = '✂️';
+  slash.style.left   = x;
+  slash.style.bottom = y;
+  gameArea.appendChild(slash);
+  setTimeout(() => slash.remove(), 600);
+}
+
+function showComboPopup(enemy, combo) {
+  const gameArea = document.getElementById('game-area');
+  const popup = document.createElement('div');
+  popup.className = 'combo-pop text-pink-400';
+  popup.textContent = `${combo}× COMBO!`;
+  popup.style.left   = enemy.style.left;
+  popup.style.bottom = enemy.style.bottom;
+  gameArea.appendChild(popup);
+  setTimeout(() => popup.remove(), 800);
+}
+
+// ============================
+// LEVEL UP
+// ============================
+function triggerLevelUp() {
+  setLevelBackground(gameState.level);
+  document.getElementById('hud-level').textContent = gameState.level;
+
+  // Restart spawn interval faster
+  if (spawnInterval) clearInterval(spawnInterval);
+  spawnInterval = setInterval(() => { if (gameActive && !gamePaused) spawnEnemy(); }, getCurrentSpawnRate());
+
+  // Show burst
+  const burst = document.createElement('div');
+  burst.className = 'levelup-burst';
+  burst.innerHTML = `<div class="levelup-text">⭐ LEVEL ${gameState.level}!</div>`;
+  document.body.appendChild(burst);
+  setTimeout(() => burst.remove(), 1400);
+}
+
+// ============================
+// YOU LOSE SCREEN
+// ============================
+function showYouLose(callback) {
+  const overlay = document.createElement('div');
+  overlay.className = 'you-lose-overlay';
+  overlay.innerHTML = '<div class="you-lose-text">YOU LOSE!</div>';
+  document.body.appendChild(overlay);
+  setTimeout(() => {
+    overlay.remove();
+    callback();
+  }, 2000);
+}
+
+// ============================
+// POWER-UPS
+// ============================
+function activatePowerup() {
+  const types = ['shield','double','slow'];
+  const type  = types[Math.floor(Math.random() * types.length)];
+  const DURATION = 5000;
+
+  if (type === 'shield') {
+    gameState.hasShield = true;
+    document.getElementById('shield-indicator').classList.remove('hidden');
+    setTimeout(() => {
+      gameState.hasShield = false;
+      document.getElementById('shield-indicator').classList.add('hidden');
+    }, DURATION);
+  } else if (type === 'double') {
+    gameState.hasDoublePoints = true;
+    document.getElementById('double-indicator').classList.remove('hidden');
+    setTimeout(() => {
+      gameState.hasDoublePoints = false;
+      document.getElementById('double-indicator').classList.add('hidden');
+    }, DURATION);
+  } else {
+    gameState.hasSlowTime = true;
+    document.getElementById('slow-indicator').classList.remove('hidden');
+    clearInterval(spawnInterval);
+    spawnInterval = setInterval(() => { if(gameActive && !gamePaused) spawnEnemy(); }, getCurrentSpawnRate() * 2);
+    setTimeout(() => {
+      gameState.hasSlowTime = false;
+      document.getElementById('slow-indicator').classList.add('hidden');
+      clearInterval(spawnInterval);
+      spawnInterval = setInterval(() => { if(gameActive && !gamePaused) spawnEnemy(); }, getCurrentSpawnRate());
+    }, DURATION);
+  }
+}
+
+// ============================
+// HUD UPDATE
+// ============================
+function updateGameUI() {
+  document.getElementById('score-display').textContent = gameState.score;
+  document.getElementById('hud-level').textContent     = gameState.level;
+  document.getElementById('combo-display').textContent = gameState.combo + 'x';
+  const livesEl = document.getElementById('lives-display');
+  livesEl.textContent = '❤️'.repeat(Math.max(0,gameState.lives)) + '🖤'.repeat(Math.max(0,3-gameState.lives));
+}
+
+// ============================
+// GAME OVER
+// ============================
+function checkGameOver() {
+  if (gameState.lives <= 0) {
+    gameActive = false;
+    showYouLose(() => endGame());
+  }
+}
+
+function endGame() {
+  gameActive = false;
+  if (spawnInterval) clearInterval(spawnInterval);
+
+  if (gameState.score > 5000)      gameState.rank = 'Legendary';
+  else if (gameState.score > 2000) gameState.rank = 'Master';
+  else if (gameState.score > 500)  gameState.rank = 'Warrior';
+  else                             gameState.rank = 'Novice';
+
+  document.getElementById('game-over-score').textContent = gameState.score;
+  document.getElementById('game-over-kills').textContent = gameState.kills;
+  document.getElementById('game-over-combo').textContent = gameState.maxCombo + 'x';
+  document.getElementById('game-over-coins').textContent = gameState.coins;
+
+  // Persist
+  playerData.total_coins = (playerData.total_coins || 0) + gameState.coins;
+  playerData.high_score  = Math.max(playerData.high_score || 0, gameState.score);
+  playerData.games_played = (playerData.games_played || 0) + 1;
+  playerData.total_kills  = (playerData.total_kills || 0) + gameState.kills;
+  playerData.rank = gameState.rank;
+
+  const modal = document.getElementById('game-over-modal');
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+}
+
+document.getElementById('restart-game').addEventListener('click', () => {
+  const modal = document.getElementById('game-over-modal');
+  modal.classList.add('hidden');
+  modal.classList.remove('flex');
+  showInstructions();
+});
+document.getElementById('menu-from-game').addEventListener('click', () => {
+  if (spawnInterval) clearInterval(spawnInterval);
+  gameActive = false;
+  showScreen('main-menu');
+  updateMainMenuUI();
+});
+
+// ============================
+// PAUSE
+// ============================
+document.getElementById('pause-btn').addEventListener('click', () => {
+  if (!gameActive) return;
+  showPauseMenu();
+});
+
+function showPauseMenu() {
+  gamePaused = true;
+  if (spawnInterval) clearInterval(spawnInterval);
+
+  const overlay = document.createElement('div');
+  overlay.className = 'pause-overlay';
+  overlay.id = 'pause-overlay';
+  overlay.innerHTML = `
+    <div class="bg-gray-900 border-4 border-yellow-500 p-10 rounded-xl text-center">
+      <h2 class="title-font text-5xl text-yellow-400 neon-glow mb-8">PAUSED</h2>
+      <div class="space-y-4">
+        <button id="resume-btn" class="samurai-font w-64 py-4 bg-green-600 hover:bg-green-500 text-white rounded-lg font-bold text-lg">▶ RESUME</button>
+        <button id="pause-menu-btn" class="samurai-font w-64 py-4 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-bold text-lg">← MAIN MENU</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+
+  document.getElementById('resume-btn').addEventListener('click', () => {
+    overlay.remove();
+    gamePaused = false;
+    spawnInterval = setInterval(() => { if(gameActive && !gamePaused) spawnEnemy(); }, getCurrentSpawnRate());
+  });
+  document.getElementById('pause-menu-btn').addEventListener('click', () => {
+    overlay.remove();
+    gameActive = false;
+    gamePaused = false;
+    if (spawnInterval) clearInterval(spawnInterval);
+    showScreen('main-menu');
+    updateMainMenuUI();
+  });
+}
+
+// ============================
+// SHOP
+// ============================
+function updateShopUI() {
+  document.getElementById('shop-coins').textContent = playerData.total_coins;
+  const rankEl = document.getElementById('shop-rank');
+  rankEl.textContent = (playerData.rank || 'Novice').toUpperCase();
+  rankEl.className   = `rank-badge rank-${(playerData.rank || 'Novice').toLowerCase()}`;
+}
+
+function renderShop() {
+  renderShopSection(SHOP_ITEMS.skins,   document.getElementById('skins-container'),   'skin');
+  renderShopSection(SHOP_ITEMS.weapons, document.getElementById('weapons-container'), 'weapon');
+  renderShopSection(SHOP_ITEMS.clothes, document.getElementById('clothes-container'), 'clothes');
+}
+
+function renderShopSection(items, container, type) {
+  container.innerHTML = '';
+  items.forEach(item => {
+    const canAfford  = playerData.total_coins >= item.cost || item.cost === 0;
+    const isEquipped = playerData.current_skin === item.id;
+    const card = document.createElement('div');
+    card.className = `shop-item bg-gray-800 p-4 rounded-xl border-2 border-gray-700 text-center ${isEquipped ? 'equipped' : ''} ${!canAfford ? 'opacity-40' : ''}`;
+    card.innerHTML = `
+      <div class="text-4xl mb-2">${item.emoji}</div>
+      <p class="text-white font-bold text-xs samurai-font mb-1">${item.name}</p>
+      <p class="text-yellow-400 font-bold text-sm">${item.cost === 0 ? 'FREE' : item.cost + ' 💰'}</p>
+      ${isEquipped ? '<p class="text-green-400 text-xs mt-2 samurai-font">✓ EQUIPPED</p>' : ''}
+      ${canAfford && !isEquipped ? `<button class="equip-btn samurai-font mt-2 w-full py-1 bg-cyan-600 text-white rounded text-xs font-bold" data-id="${item.id}" data-type="${type}">EQUIP</button>` : ''}
+    `;
+    container.appendChild(card);
+  });
+}
+
+document.addEventListener('click', e => {
+  if (e.target.classList.contains('equip-btn')) {
+    playerData.current_skin = e.target.dataset.id;
+    renderShop();
+  }
+});
+
+document.getElementById('back-from-shop').addEventListener('click', () => showScreen('main-menu'));
+
+// ============================
+// LEADERBOARD
+// ============================
+function renderLeaderboard() {
+  const list = document.getElementById('leaderboard-list');
+
+  // Merge current player into local fake leaderboard for demo
+  const demoPlayers = [
+    { player_name:'Shadow_Blade',  high_score:8420, rank:'Legendary' },
+    { player_name:'NeonSamurai',   high_score:6100, rank:'Legendary' },
+    { player_name:'CrimsonStrike', high_score:3800, rank:'Master'    },
+    { player_name:'IronGuardian',  high_score:2500, rank:'Master'    },
+    { player_name:'SwiftNinja99',  high_score:900,  rank:'Warrior'   },
+    ...allPlayers
+  ];
+
+  if (playerData.high_score > 0) {
+    demoPlayers.push({ player_name: playerData.player_name, high_score: playerData.high_score, rank: playerData.rank });
+  }
+
+  demoPlayers.sort((a,b) => (b.high_score||0) - (a.high_score||0));
+  const top10 = demoPlayers.slice(0,10);
+
+  if (top10.length === 0) {
+    list.innerHTML = '<p class="text-gray-400 text-center py-8">No scores yet. Start playing!</p>';
+    return;
+  }
+
+  list.innerHTML = '';
+  top10.forEach((p,i) => {
+    const medal = i===0?'🥇':i===1?'🥈':i===2?'🥉':'  ';
+    const row = document.createElement('div');
+    row.className = 'bg-gray-800 p-4 rounded-xl flex justify-between items-center border-l-4 border-yellow-500';
+    row.innerHTML = `
+      <div>
+        <p class="text-white font-bold samurai-font text-sm">${medal} #${i+1}</p>
+        <p class="text-gray-400 text-xs">${p.player_name}</p>
+      </div>
+      <div class="text-right">
+        <p class="text-yellow-400 font-bold text-lg samurai-font">${p.high_score||0}</p>
+        <span class="rank-badge rank-${(p.rank||'Novice').toLowerCase()} text-xs">${p.rank||'Novice'}</span>
+      </div>
+    `;
+    list.appendChild(row);
+  });
+}
+
+document.getElementById('back-from-leaderboard').addEventListener('click', () => showScreen('main-menu'));
+
+// ============================
+// SETTINGS
+// ============================
+document.getElementById('back-from-settings').addEventListener('click', () => showScreen('main-menu'));
+document.getElementById('sound-toggle').addEventListener('change', e => { gameState.soundEnabled = e.target.checked; });
+document.getElementById('music-toggle').addEventListener('change',  e => { gameState.musicEnabled  = e.target.checked; });
+
+// ============================
+// MAIN MENU UI
+// ============================
+function updateMainMenuUI() {
+  document.getElementById('player-preview').innerHTML = `
+    <p class="text-yellow-400 font-bold samurai-font">${playerData.player_name}</p>
+    <p class="text-gray-400 text-xs">High Score: ${playerData.high_score}</p>
+    <span class="rank-badge rank-${(playerData.rank||'Novice').toLowerCase()} mt-1">${(playerData.rank||'NOVICE').toUpperCase()}</span>
+  `;
+}
+
+// ============================
+// INIT
+// ============================
+showScreen('main-menu');
+updateMainMenuUI();
+</script>
+</body>
+</html>
